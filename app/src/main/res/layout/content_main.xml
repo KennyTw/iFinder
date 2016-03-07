@@ -19,7 +19,6 @@
         android:id="@+id/button"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="63dp"
         android:layout_gravity="center" />
 
     <Button
@@ -48,4 +47,17 @@
         android:layout_below="@+id/button3"
         android:layout_alignStart="@+id/button3"
         android:layout_gravity="center" />
+
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/textView"
+        android:layout_below="@+id/button4"
+        android:layout_gravity="center"
+        android:maxLines = "1024"
+        android:scrollbars = "vertical"
+       />
+
+
 </RelativeLayout>

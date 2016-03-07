@@ -13,15 +13,19 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import java.text.DateFormat;
 import java.util.Arrays;
@@ -36,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private Button button2;
     private Button button3;
     private Button button4;
+    private TextView textView;
 
     private static final String TAG = "iFinder";
     private BluetoothAdapter mBluetoothAdapter;
@@ -45,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothGatt mGatt = null;
     private BluetoothGattService mGattService;
     private String lastcommand ;
+    private Handler messageHandler;
+    private int mincount = 0;
 
     public static final UUID UUID_SERVICE_MILI = UUID.fromString("0000fee0-0000-1000-8000-00805f9b34fb");
     public static final UUID UUID_CHAR_BATTERY = UUID.fromString("0000ff0c-0000-1000-8000-00805f9b34fb");
@@ -63,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
     public static final byte COMMAND_CONFIRM_ACTIVITY_DATA_TRANSFER_COMPLETE = 0xa;
     public static final byte COMMAND_FETCH_DATA = 0x6;
 
+    private static boolean ENABLE_NOTIFICATION = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -76,12 +84,27 @@ public class MainActivity extends AppCompatActivity {
         button2 = (Button)findViewById(R.id.button2);
         button3 = (Button)findViewById(R.id.button3);
         button4 = (Button)findViewById(R.id.button4);
+        textView = (TextView) findViewById(R.id.textView);
+        textView.setMovementMethod(new ScrollingMovementMethod());
+
+        messageHandler = new Handler() {
+            @Override
+            public void handleMessage(Message msg) {
+                if (msg.obj == null) {
+                    textView.setText("");
+                } else {
+                    textView.append(msg.obj.toString() + "\r\n");
+                }
+            }
+        };
 
         mHandler = new Handler();
 
         button1.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
+                textView.setText("");
+                mincount = 0;
                 lastcommand = "writeChar";
                 BlueToothDirect();
             }
@@ -91,6 +114,8 @@ public class MainActivity extends AppCompatActivity {
         button2.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
+                textView.setText("");
+                mincount = 0;
                 lastcommand = "readActivity";
                 BlueToothDirect();
             }
@@ -101,6 +126,8 @@ public class MainActivity extends AppCompatActivity {
         button3.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //textView.setText("");
+               // mincount = 0;
                 lastcommand = "stopsync";
                 BlueToothDirect();
             }
@@ -110,6 +137,8 @@ public class MainActivity extends AppCompatActivity {
         button4.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
+                textView.setText("");
+                mincount = 0;
               if (mGatt != null)
                mGatt.disconnect();
             }
@@ -220,6 +249,7 @@ public class MainActivity extends AppCompatActivity {
                         byte[] STOP_ACT = new byte[]{0x11};
                         control.setValue(STOP_ACT);
                         gatt.writeCharacteristic(control);
+                        ENABLE_NOTIFICATION = false;
                         return;
                     }
                 }
@@ -227,24 +257,25 @@ public class MainActivity extends AppCompatActivity {
 
                 //BluetoothGattCharacteristic bch = gattService.getCharacteristic(UUID_CHAR_CONTROL_POINT);
                // BluetoothGattCharacteristic bch = gattService.getCharacteristic(UUID_CHAR_REALTIME_STEPS);
-                BluetoothGattCharacteristic bch = gattService.getCharacteristic(UUID_CHAR_ACTIVITY_DATA);
-                if (bch != null) {
-                    Log.i(TAG, "BluetoothGattCharacteristic UUID_CHAR_CONTROL_POINT");
 
-                    byte[] VIBRATION_WITH_LED = {1};
-                    byte[] START_HEART_RATE_SCAN = {21, 2, 1};
-                    //byte[] SYNC = {11};
-                   // byte[] GET_ACT = {18,1};
-                    byte[] GET_ACT = {6};
-                    byte[] fetch = new byte[]{COMMAND_FETCH_DATA};
-                    byte[] ENABLE_REALTIME_STEPS_NOTIFY = {3, 1};
+                if (!ENABLE_NOTIFICATION) {
+                    BluetoothGattCharacteristic bch = gattService.getCharacteristic(UUID_CHAR_ACTIVITY_DATA);
+                    if (bch != null) {
+                        Log.i(TAG, "BluetoothGattCharacteristic UUID_CHAR_CONTROL_POINT");
 
-                   // bch.setValue(GET_ACT);
-                  //  gatt.writeCharacteristic(bch);
+                        ENABLE_NOTIFICATION = true;
+                        byte[] VIBRATION_WITH_LED = {1};
+                        byte[] START_HEART_RATE_SCAN = {21, 2, 1};
+                        //byte[] SYNC = {11};
+                        // byte[] GET_ACT = {18,1};
+                        byte[] GET_ACT = {6};
+                        byte[] fetch = new byte[]{COMMAND_FETCH_DATA};
+                        byte[] ENABLE_REALTIME_STEPS_NOTIFY = {3, 1};
 
-                   // gatt.readCharacteristic(bch);
+                        // bch.setValue(GET_ACT);
+                        //  gatt.writeCharacteristic(bch);
 
-
+                        // gatt.readCharacteristic(bch);
 
 
                         gatt.setCharacteristicNotification(bch, true);
@@ -253,16 +284,18 @@ public class MainActivity extends AppCompatActivity {
                         gatt.writeDescriptor(descriptor);
 
 
-                   // bch.setValue(ENABLE_REALTIME_STEPS_NOTIFY);
-                    //gatt.readCharacteristic(bch);
-                    //gatt.writeCharacteristic(bch);
-                    //Log.i(TAG, "BluetoothGattCharacteristic writeCharacteristic OK");
 
 
-                    //Log.i(TAG, "BluetoothGattCharacteristic writeDescriptor OK");
+                        // bch.setValue(ENABLE_REALTIME_STEPS_NOTIFY);
+                        //gatt.readCharacteristic(bch);
+                        //gatt.writeCharacteristic(bch);
+                        //Log.i(TAG, "BluetoothGattCharacteristic writeCharacteristic OK");
 
 
+                        //Log.i(TAG, "BluetoothGattCharacteristic writeDescriptor OK");
 
+
+                    }
                 }
 
             }
@@ -430,14 +463,20 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG,"total data to read: " + totalDataToRead + " len: " + (totalDataToRead / BytesPerMinute) + " minute(s)");
 
                 Log.d(TAG,"data to read until next header: " + dataUntilNextHeader + " len: " + String.valueOf((dataUntilNextHeader / BytesPerMinute)) + " minute(s)");
-                Log.d(TAG, "TIMESTAMP: " + DateFormat.getDateTimeInstance().format(timestamp.getTime()) + " magic byte: " + dataUntilNextHeader);
+
+                String outtext = "TIMESTAMP: " + DateFormat.getDateTimeInstance().format(timestamp.getTime()) + " magic byte: " + dataUntilNextHeader;
+                setText(outtext);
+                Log.d(TAG, outtext);
+
 
             } else  {
                 Log.d(TAG, "activity data raw  ");
 
                 for (int i = 0; i < data.length; i += BytesPerMinute) {
-
-                    Log.d(TAG, "category:" + data[i] + ",intensity:" + (data[i + 1]& 0xff) + ",steps:" + (data[i + 2]& 0xff) + ",heartrate:" + (data[i + 3] & 0xff));
+                    mincount ++;
+                    String outtext = "[" + mincount + "] category:" + data[i] + ",intensity:" + (data[i + 1]& 0xff) + ",steps:" + (data[i + 2]& 0xff) + ",heartrate:" + (data[i + 3] & 0xff);
+                    setText(outtext);
+                    Log.d(TAG,outtext );
                 }
             }
 
@@ -588,5 +627,11 @@ public class MainActivity extends AppCompatActivity {
         connectToDevice("C8:0F:10:11:FE:24");
         //mBluetoothAdapter.startLeScan(mLeScanCallback);
         //scanLeDevice(true);
+    }
+
+    private void setText(String text) {
+        Message msg = Message.obtain(messageHandler);
+        msg.obj = text;
+        messageHandler.sendMessage(msg);
     }
 }
