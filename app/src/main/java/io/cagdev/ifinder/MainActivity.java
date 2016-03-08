@@ -115,6 +115,17 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 textView.setText("");
+
+                if (mGattService != null && mGatt != null) {
+                    BluetoothGattCharacteristic bchnotify = mGattService.getCharacteristic(UUID_CHAR_ACTIVITY_DATA);
+                    if (bchnotify != null ) {
+                        mGatt.setCharacteristicNotification(bchnotify, false);
+                        BluetoothGattDescriptor descriptorfalse = bchnotify.getDescriptor(UUID_DESCRIPTOR_UPDATE_NOTIFICATION);
+                        descriptorfalse.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                        mGatt.writeDescriptor(descriptorfalse);
+                    }
+                }
+
                 mincount = 0;
                 lastcommand = "readActivity";
                 BlueToothDirect();
@@ -138,9 +149,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 textView.setText("");
-                mincount = 0;
+
+
+              /*  mincount = 0;
               if (mGatt != null)
-               mGatt.disconnect();
+               mGatt.disconnect();*/
             }
 
         });
@@ -250,6 +263,11 @@ public class MainActivity extends AppCompatActivity {
                         control.setValue(STOP_ACT);
                         gatt.writeCharacteristic(control);
                         ENABLE_NOTIFICATION = false;
+
+                        /*gatt.setCharacteristicNotification(control, false);
+                        BluetoothGattDescriptor descriptor = control.getDescriptor(UUID_DESCRIPTOR_UPDATE_NOTIFICATION);
+                        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                        gatt.writeDescriptor(descriptor);*/
                         return;
                     }
                 }
@@ -262,6 +280,16 @@ public class MainActivity extends AppCompatActivity {
                     BluetoothGattCharacteristic bch = gattService.getCharacteristic(UUID_CHAR_ACTIVITY_DATA);
                     if (bch != null) {
                         Log.i(TAG, "BluetoothGattCharacteristic UUID_CHAR_CONTROL_POINT");
+
+
+                        /*BluetoothGattCharacteristic bchnotify = gattService.getCharacteristic(UUID_CHAR_ACTIVITY_DATA);
+                        if (bchnotify != null) {
+                            gatt.setCharacteristicNotification(bchnotify, false);
+                            BluetoothGattDescriptor descriptorfalse = bchnotify.getDescriptor(UUID_DESCRIPTOR_UPDATE_NOTIFICATION);
+                            descriptorfalse.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                            gatt.writeDescriptor(descriptorfalse);
+                        }*/
+
 
                         ENABLE_NOTIFICATION = true;
                         byte[] VIBRATION_WITH_LED = {1};
@@ -377,6 +405,30 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG,"data to read until next header: " + dataUntilNextHeader + " len: " + String.valueOf((dataUntilNextHeader / BytesPerMinute)) + " minute(s)");
                 Log.d(TAG, "TIMESTAMP: " + DateFormat.getDateTimeInstance().format(timestamp.getTime()) + " magic byte: " + dataUntilNextHeader);
 
+                if (dataUntilNextHeader == 0) {
+                    mincount = 0;
+
+                    BluetoothGattCharacteristic control = mGattService.getCharacteristic(UUID_CHAR_CONTROL_POINT);
+                    if (control != null) {
+                        byte[] STOP_ACT = new byte[]{0x11};
+                        control.setValue(STOP_ACT);
+                        gatt.writeCharacteristic(control);
+                        ENABLE_NOTIFICATION = false;
+
+                        /*BluetoothGattCharacteristic bchnotify = mGattService.getCharacteristic(UUID_CHAR_ACTIVITY_DATA);
+                        if (bchnotify != null) {
+                            gatt.setCharacteristicNotification(bchnotify, false);
+                            BluetoothGattDescriptor descriptorfalse = bchnotify.getDescriptor(UUID_DESCRIPTOR_UPDATE_NOTIFICATION);
+                            descriptorfalse.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                            gatt.writeDescriptor(descriptorfalse);
+                        }*/
+
+                        Log.d(TAG, "magic bytes Zero Stop Notification");
+                    }
+
+                }
+
+
                 byte[] ackTime = calendarToRawBytes(timestamp);
 
                 /*byte[] ackChecksum = new byte[]{
@@ -400,6 +452,8 @@ public class MainActivity extends AppCompatActivity {
                         ackChecksum[0],
                         ackChecksum[1]
                 };
+
+
 
 
               // BluetoothGattCharacteristic bch = mGattService.getCharacteristic(UUID_CHAR_ACTIVITY_DATA);
@@ -467,6 +521,23 @@ public class MainActivity extends AppCompatActivity {
                 String outtext = "TIMESTAMP: " + DateFormat.getDateTimeInstance().format(timestamp.getTime()) + " magic byte: " + dataUntilNextHeader;
                 setText(outtext);
                 Log.d(TAG, outtext);
+
+                if (dataUntilNextHeader == 0) {
+                    mincount = 0;
+
+                    BluetoothGattCharacteristic control = mGattService.getCharacteristic(UUID_CHAR_CONTROL_POINT);
+                    if (control != null) {
+                        byte[] STOP_ACT = new byte[]{0x11};
+                        control.setValue(STOP_ACT);
+                        gatt.writeCharacteristic(control);
+                        ENABLE_NOTIFICATION = false;
+
+
+
+                        Log.d(TAG, "magic bytes Zero Stop Notification");
+                    }
+
+                }
 
 
             } else  {
